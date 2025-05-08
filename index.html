@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Optional custom styles can go here if needed, but Tailwind should cover most styling */
+        #imageDisplay {
+            max-width: 100%;
+            max-height: 500px; /* Limit max height for better viewing */
+            object-fit: contain; /* Ensure the image fits within the container */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+        <h1 class="text-2xl font-bold mb-4">Simple Photo Editor</h1>
+
+        <input type="file" id="uploadInput" accept="image/*" class="mb-4 block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-full file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"/>
+
+        <div class="mb-4 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden" style="min-height: 200px;">
+            <img id="imageDisplay" src="" alt="Uploaded Image" class="hidden"/>
+            <p id="placeholderText" class="text-gray-500">Upload an image to see it here.</p>
+        </div>
+
+        <div class="flex justify-center space-x-4">
+            <button id="deleteBtn" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-50" disabled>Delete</button>
+            <button id="undoBtn" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 disabled:opacity-50" disabled>Undo</button>
+            <button id="redoBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:opacity-50" disabled>Redo</button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const uploadInput = document.getElementById('uploadInput');
+        const imageDisplay = document.getElementById('imageDisplay');
+        const placeholderText = document.getElementById('placeholderText');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+
+        // Array to store image states (data URLs) for undo/redo
+        let history = [];
+        // Index to track the current position in the history array
+        let historyIndex = -1;
+
+        // Function to update the image display and history
+        function updateImage(imageDataUrl) {
+            if (imageDataUrl) {
+                imageDisplay.src = imageDataUrl;
+                imageDisplay.classList.remove('hidden');
+                placeholderText.classList.add('hidden');
+                deleteBtn.disabled = false; // Enable delete button
+            } else {
+                // If imageDataUrl is empty, hide the image and show placeholder
+                imageDisplay.src = '';
+                imageDisplay.classList.add('hidden');
+                placeholderText.classList.remove('hidden');
+                deleteBtn.disabled = true; // Disable delete button
+            }
+            // Add the current state to history, clearing future states
+            history = history.slice(0, historyIndex + 1);
+            history.push(imageDataUrl);
+            historyIndex++;
+            updateButtonStates(); // Update button states after history change
+        }
+
+        // Function to update the disabled state of undo/redo buttons
+        function updateButtonStates() {
+            undoBtn.disabled = historyIndex <= 0; // Disable undo if at the beginning
+            redoBtn.disabled = historyIndex >= history.length - 1; // Disable redo if at the end
+        }
+
+        // Event listener for file input change
+        uploadInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    updateImage(e.target.result); // Update image and history with the uploaded file
+                };
+                reader.readAsDataURL(file); // Read the file as a data URL
+            }
+        });
+
+        // Event listener for delete button click
+        deleteBtn.addEventListener('click', function() {
+            updateImage(''); // Clear the image and add empty state to history
+        });
+
+        // Event listener for undo button click
+        undoBtn.addEventListener('click', function() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                updateImage(history[historyIndex]); // Move back in history and update image
+            }
+        });
+
+        // Event listener for redo button click
+        redoBtn.addEventListener('click', function() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                updateImage(history[historyIndex]); // Move forward in history and update image
+            }
+        });
+
+        // Initial button state update
+        updateButtonStates();
+
+    </script>
+
+</body>
+</html>
